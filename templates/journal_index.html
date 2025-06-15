@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Entries</title>
+</head>
+<body>
+    <h1>Journal Entries</h1>
+    <a href="{{ url_for('new_entry') }}">New Entry</a>
+    <ul>
+        {% for id, title, content, created in entries %}
+        <li>
+            <h2>{{ title }}</h2>
+            <small>{{ created }}</small>
+            <p>{{ content }}</p>
+        </li>
+        {% else %}
+        <li>No entries yet.</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
