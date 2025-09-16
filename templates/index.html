@@ -3,17 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ethics Checklist</title>
+    <title>Afghanistan Home Rental Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <form method="post">
-        <h1>AI Ethics Checklist</h1>
-        <label for="data_privacy">Have you ensured data privacy?</label><br>
-        <input type="checkbox" id="data_privacy" name="data_privacy"><br>
-        <label for="bias_mitigation">Have you checked for biases in your model?</label><br>
-        <input type="checkbox" id="bias_mitigation" name="bias_mitigation"><br>
-        <!-- Add more questions as needed -->
-        <input type="submit" value="Submit">
-    </form>
+    <header class="hero">
+        <div class="hero__content">
+            <h1>Afghanistan Home Rental Hub</h1>
+            <p>Landlords can share available homes across Afghanistan and renters can quickly find a safe place to stay.</p>
+        </div>
+    </header>
+
+    <main class="page">
+        {% if success_message %}
+            <div class="alert alert--success">{{ success_message }}</div>
+        {% endif %}
+        {% if errors %}
+            <div class="alert alert--error">
+                <p>We couldn't process your request:</p>
+                <ul>
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <section class="listings">
+            <h2>Available Properties</h2>
+            {% if listings %}
+                <div class="listings__grid">
+                    {% for listing in listings %}
+                        <article class="listing-card">
+                            <div class="listing-card__header">
+                                <h3>{{ listing.title }}</h3>
+                                <span class="listing-card__price">{{ listing.rent_display }}</span>
+                            </div>
+                            <p class="listing-card__location">{{ listing.city }}, {{ listing.district }}</p>
+                            <ul class="listing-card__meta">
+                                <li><strong>Bedrooms:</strong> {{ listing.bedrooms }}</li>
+                                <li><strong>Bathrooms:</strong> {{ listing.bathrooms }}</li>
+                                <li><strong>Posted:</strong> {{ listing.created_at.strftime('%d %B %Y') }}</li>
+                            </ul>
+                            {% if listing.amenities %}
+                                <div class="listing-card__amenities">
+                                    <p>Amenities</p>
+                                    <ul class="chip-list">
+                                        {% for amenity in listing.amenities %}
+                                            <li>{{ amenity }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                            <p class="listing-card__description">{{ listing.description }}</p>
+                            <div class="listing-card__footer">
+                                <p><strong>Contact:</strong> {{ listing.contact_name }}</p>
+                                <p><strong>Phone:</strong> {{ listing.contact_phone }}</p>
+                                {% if listing.contact_email %}
+                                    <p><strong>Email:</strong> {{ listing.contact_email }}</p>
+                                {% endif %}
+                                <p class="listing-card__inquiries">{{ inquiry_counts.get(listing.id, 0) }} renter inquiries received</p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">There are no property listings yet. Landlords can add their homes using the form on the right.</p>
+            {% endif %}
+        </section>
+
+        <aside class="actions">
+            <section class="form-card">
+                <h2>List Your Property</h2>
+                <form method="post" class="form" novalidate>
+                    <input type="hidden" name="form_type" value="create_listing">
+
+                    <label for="title">Listing title *</label>
+                    <input type="text" id="title" name="title" placeholder="e.g., Cozy Apartment in Kabul" required>
+
+                    <label for="city">City *</label>
+                    <input type="text" id="city" name="city" placeholder="Kabul" required>
+
+                    <label for="district">District / Neighborhood *</label>
+                    <input type="text" id="district" name="district" placeholder="Shahr-e Naw" required>
+
+                    <div class="form__row">
+                        <div>
+                            <label for="monthly_rent">Monthly rent (AFN) *</label>
+                            <input type="number" id="monthly_rent" name="monthly_rent" min="1" step="1" required>
+                        </div>
+                        <div>
+                            <label for="bedrooms">Bedrooms *</label>
+                            <input type="number" id="bedrooms" name="bedrooms" min="1" step="1" required>
+                        </div>
+                        <div>
+                            <label for="bathrooms">Bathrooms *</label>
+                            <input type="number" id="bathrooms" name="bathrooms" min="1" step="1" required>
+                        </div>
+                    </div>
+
+                    <fieldset class="form__group">
+                        <legend>Amenities</legend>
+                        <label><input type="checkbox" name="amenities" value="Electricity"> Electricity</label>
+                        <label><input type="checkbox" name="amenities" value="Running Water"> Running Water</label>
+                        <label><input type="checkbox" name="amenities" value="Internet"> Internet</label>
+                        <label><input type="checkbox" name="amenities" value="Furnished"> Furnished</label>
+                        <label><input type="checkbox" name="amenities" value="Parking"> Parking</label>
+                        <label><input type="checkbox" name="amenities" value="Back-up Generator"> Back-up Generator</label>
+                    </fieldset>
+
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" rows="4" placeholder="Share details about the home, nearby shops, and safety." required></textarea>
+
+                    <label for="contact_name">Contact person *</label>
+                    <input type="text" id="contact_name" name="contact_name" placeholder="Your name" required>
+
+                    <label for="contact_phone">Contact phone *</label>
+                    <input type="tel" id="contact_phone" name="contact_phone" placeholder="+93 700 000 000" required>
+
+                    <label for="contact_email">Contact email</label>
+                    <input type="email" id="contact_email" name="contact_email" placeholder="you@example.com">
+
+                    <button type="submit" class="button">Publish Listing</button>
+                </form>
+            </section>
+
+            <section class="form-card">
+                <h2>Request to Rent</h2>
+                {% if listings %}
+                    <form method="post" class="form" novalidate>
+                        <input type="hidden" name="form_type" value="rental_request">
+
+                        <label for="listing_id">Choose a home *</label>
+                        <select id="listing_id" name="listing_id" required>
+                            <option value="">Select a listing</option>
+                            {% for listing in listings %}
+                                <option value="{{ listing.id }}">{{ listing.title }} — {{ listing.city }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="renter_name">Your name *</label>
+                        <input type="text" id="renter_name" name="renter_name" placeholder="Your full name" required>
+
+                        <label for="renter_phone">Phone number *</label>
+                        <input type="tel" id="renter_phone" name="renter_phone" placeholder="+93 700 000 000" required>
+
+                        <label for="renter_email">Email address</label>
+                        <input type="email" id="renter_email" name="renter_email" placeholder="you@example.com">
+
+                        <label for="move_in_date">Preferred move-in date</label>
+                        <input type="date" id="move_in_date" name="move_in_date">
+
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" rows="4" placeholder="Introduce yourself and share your needs." required></textarea>
+
+                        <button type="submit" class="button button--secondary">Send Request</button>
+                    </form>
+                {% else %}
+                    <p class="empty-state">Check back soon! Once landlords add homes, you can send your request from here.</p>
+                {% endif %}
+            </section>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <p>Built to support safe and transparent home rentals across Afghanistan.</p>
+    </footer>
 </body>
 </html>
